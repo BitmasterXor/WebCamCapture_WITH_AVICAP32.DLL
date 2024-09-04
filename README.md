@@ -4,7 +4,7 @@
 
 <!-- Replace 'screenshot.png' with the path to your actual image file -->
 <p align="center">
-  <img src="screenshot.png" alt="Screenshot of the Webcam Capture Application" style="max-width:100%; height:auto;">
+  <img src="preview.png" alt="Screenshot of the Webcam Capture Application" style="max-width:100%; height:auto;">
 </p>
 
 <h2>Features</h2>
