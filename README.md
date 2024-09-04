@@ -35,4 +35,5 @@
 </ul>
 
 <h2>License</h2>
-<p>This project is licensed under the MIT License - see the <a href="LICENSE">LICENSE</a> file for details.</p>
+<p>This project is provided free of charge and comes with no warranties.</p>
+
