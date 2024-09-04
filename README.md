@@ -2,6 +2,9 @@
 
 <p>This Delphi VCL application allows users to capture video from a selected webcam. It features an intuitive user interface with a button to start/stop the video capture and a <code>ComboBox</code> to select from available webcam devices. The captured video is displayed in an <code>Image</code> control.</p>
 
+<!-- Replace 'screenshot.png' with the path to your actual image file -->
+<img src="screenshot.png" alt="Screenshot of the Webcam Capture Application" style="max-width:100%; height:auto;">
+
 <h2>Features</h2>
 <ul>
   <li><strong>Webcam Selection:</strong> Lists all available video capture devices.</li>
@@ -23,8 +26,6 @@
   <li><strong>Start Capture:</strong> Click the "Start Webcam Capture!" button to begin capturing video.</li>
   <li><strong>Stop Capture:</strong> Click the "Stop Webcam Capture!" button to stop capturing video.</li>
 </ol>
-
-
 
 <h2>Dependencies</h2>
 <ul>
