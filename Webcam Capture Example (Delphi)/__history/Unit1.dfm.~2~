@@ -1,0 +1,46 @@
+object Form1: TForm1
+  Left = 0
+  Top = 0
+  Caption = 'Webcam Capture (Delphi Example: TheBitmasterXor)'
+  ClientHeight = 376
+  ClientWidth = 427
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -12
+  Font.Name = 'Segoe UI'
+  Font.Style = []
+  Position = poScreenCenter
+  OnCreate = FormCreate
+  DesignSize = (
+    427
+    376)
+  TextHeight = 15
+  object Image1: TImage
+    Left = 0
+    Top = 0
+    Width = 423
+    Height = 297
+    Anchors = [akLeft, akTop, akRight, akBottom]
+    Stretch = True
+  end
+  object Button1: TButton
+    Left = 4
+    Top = 341
+    Width = 415
+    Height = 27
+    Anchors = [akLeft, akRight, akBottom]
+    Caption = 'Start Webcam Capture!'
+    TabOrder = 0
+    OnClick = Button1Click
+  end
+  object ComboBox1: TComboBox
+    Left = 4
+    Top = 312
+    Width = 415
+    Height = 23
+    Style = csDropDownList
+    Anchors = [akLeft, akRight, akBottom]
+    TabOrder = 1
+  end
+end

@@ -1,0 +1,166 @@
+unit Unit1;
+
+interface
+
+uses
+  Winapi.Windows,       // Windows API functions and constants
+  Winapi.Messages,      // Windows message constants and types
+  System.SysUtils,      // System utilities, including string handling and date/time functions
+  System.Variants,      // Variants for handling different data types
+  System.Classes,       // Basic classes and types for Delphi, including TObject and TComponent
+  Vcl.Graphics,         // VCL graphics components and classes, including TBitmap
+  ActiveX,              // ActiveX support, including COM interfaces
+  Vcl.Controls,         // VCL control components, such as TButton, TImage, and TComboBox
+  Vcl.Forms,            // VCL forms and form-related functions
+  Vcl.Dialogs,          // VCL dialog boxes, including message dialogs
+  Clipbrd,              // Clipboard handling functions and classes
+  Vcl.StdCtrls,         // Standard VCL controls, such as TButton and TComboBox
+  Vcl.ExtCtrls,         // Extended VCL controls, including TImage
+  Vfw;                  // Video for Windows (VFW) library for video capture
+
+type
+  TForm1 = class(TForm)
+    Image1: TImage;       // TImage component to display the captured video frame
+    Button1: TButton;     // Button component to trigger video capture
+    ComboBox1: TComboBox; // ComboBox to list available video capture devices
+    procedure Button1Click(Sender: TObject); // Event handler for button click to capture video
+    procedure FormCreate(Sender: TObject);   // Event handler for form creation to initialize components
+  private
+    CaptureWnd: HWND;    // Handle to the video capture window used by Video for Windows
+    procedure ListVideoDevices; // Method to populate the ComboBox with available video capture devices
+  end;
+
+var
+  Form1: TForm1; // Global instance of TForm1, used to access the form and its components
+
+implementation
+
+{$R *.dfm} // Link the form's DFM file (design-time information), which contains layout and control properties
+
+// Define the ICreateDevEnum interface used for enumerating video capture devices
+type
+  ICreateDevEnum = interface(IUnknown)
+    ['{29840822-5B84-11D0-BD3B-00A0C911CE86}']
+    // Method to create a class enumerator for the specified device class
+    function CreateClassEnumerator(const clsidDeviceClass: TGUID;
+      out ppEnumMoniker: IEnumMoniker; dwFlags: DWORD): HRESULT; stdcall;
+  end;
+
+// Method to populate the ComboBox with available video capture devices
+procedure TForm1.ListVideoDevices;
+const
+  // CLSID for the system device enumerator, used to create instances of device enumerators
+  CLSID_SystemDeviceEnum: TGUID = (D1: $62BE5D10; D2: $60EB; D3: $11D0;
+    D4: ($BD, $3B, $00, $A0, $C9, $11, $CE, $86));
+  // IID for the ICreateDevEnum interface, used for device enumeration
+  IID_ICreateDevEnum: TGUID = '{29840822-5B84-11D0-BD3B-00A0C911CE86}';
+  // CLSID for the video input devices category, used to enumerate video input devices
+  CLSID_VideoInputDeviceCategory: TGUID = (D1: $860BB310; D2: $5D01; D3: $11D0;
+    D4: ($BD, $3B, $00, $A0, $C9, $11, $CE, $86));
+var
+  pDevEnum: ICreateDevEnum; // Interface for creating device enumerators
+  pClassEnum: IEnumMoniker; // Interface for enumerating class monikers
+  pMoniker: IMoniker;       // Moniker representing a specific device
+  pPropertyBag: IPropertyBag; // Property bag to access device properties
+  v: OleVariant;           // Variable to store device names
+  cFetched: ulong;         // Count of devices fetched by the enumerator
+  xname: string;           // Device name
+begin
+  // Create an instance of the system device enumerator
+  CoCreateInstance(CLSID_SystemDeviceEnum, nil, CLSCTX_INPROC,
+    IID_ICreateDevEnum, pDevEnum);
+
+  // Initialize the class enumerator for video input devices
+  pClassEnum := nil;
+  pDevEnum.CreateClassEnumerator(CLSID_VideoInputDeviceCategory, pClassEnum, 0);
+
+  // Initialize the variant for use
+  VariantInit(v);
+  pMoniker := nil;
+
+  // Enumerate through available video input devices
+  while (pClassEnum.Next(1, pMoniker, @cFetched) = S_OK) do
+  begin
+    pPropertyBag := nil;
+
+    // Bind the moniker to the property bag to read device properties
+    if S_OK = pMoniker.BindToStorage(nil, nil, IPropertyBag, pPropertyBag) then
+    begin
+      // Read the friendly name of the device
+      if S_OK = pPropertyBag.Read('FriendlyName', v, nil) then
+      begin
+        xname := v; // Store the device name in a string
+        ComboBox1.Items.Add(xname); // Add the device name to the ComboBox
+      end;
+    end;
+    VariantClear(v); // Clear the variant to free resources
+  end;
+
+  // Clean up the enumerator and other objects
+  pClassEnum := nil;
+  pMoniker := nil;
+  pDevEnum := nil;
+  pPropertyBag := nil;
+end;
+
+procedure TForm1.Button1Click(Sender: TObject);
+var
+  Bitmap: TBitmap;
+  DeviceIndex: Integer;
+begin
+  // Get the selected device index from the ComboBox
+  DeviceIndex := ComboBox1.ItemIndex;
+
+  // Create a capture window
+  CaptureWnd := capCreateCaptureWindow('CaptureWindow', WS_CHILD or WS_VISIBLE, 0, 0, Image1.Width, Image1.Height, Handle, 0);
+
+  if CaptureWnd <> 0 then
+  begin
+    // Connect to the selected video capture device
+    if capDriverConnect(CaptureWnd, DeviceIndex) then
+    begin
+      // Start preview
+      SendMessage(CaptureWnd, WM_CAP_SET_PREVIEWRATE, 40, 0);
+      SendMessage(CaptureWnd, WM_CAP_SET_PREVIEW, 1, 0);
+
+      // Grab a frame
+      capGrabFrame(CaptureWnd);
+
+      // Create and setup the bitmap
+      Bitmap := TBitmap.Create;
+      try
+        Bitmap.Width := Image1.Width;  // Set the width of the bitmap
+        Bitmap.Height := Image1.Height; // Set the height of the bitmap
+
+        // Copy the captured frame to the bitmap
+        SendMessage(CaptureWnd, WM_CAP_EDIT_COPY, 0, 0);
+
+        if Clipboard.HasFormat(CF_BITMAP) then
+        begin
+          Bitmap.LoadFromClipboardFormat(CF_BITMAP, Clipboard.GetAsHandle(CF_BITMAP), 0);
+          Image1.Picture.Bitmap.Assign(Bitmap);
+        end;
+      finally
+        Bitmap.Free;
+      end;
+
+      // Disconnect and destroy the capture window
+      capDriverDisconnect(CaptureWnd);
+    end;
+
+    DestroyWindow(CaptureWnd);
+  end;
+end;
+
+procedure TForm1.FormCreate(Sender: TObject);
+begin
+  // Populate the ComboBox with available video capture devices
+  ListVideoDevices;
+
+  // Ensure the first item in the ComboBox is selected by default
+  if ComboBox1.Items.Count > 0 then
+    ComboBox1.ItemIndex := 0;
+end;
+
+end.
+
